@@ -163,12 +163,12 @@ if __name__ == '__main__':
     f.create_dataset('d', data=d)
     f.close()
 
-    for ax in 'xyz':
-        p = yt.ProjectionPlot(data_ds, ax, 'H_number_density', center=center, width=(200, 'kpc'), data_source=sp)
-        p.set_zlim('H_number_density', 1e11,1e23)
-        p.annotate_sphere(center, (10, 'kpc'), circle_args={'color':'white', 'alpha':0.5, 'linestyle':'dashed', 'linewidth':2})
-        p.annotate_marker(center, coord_system='data')
-        p.save("%s/%s/" % (run, fn))
+    #for ax in 'xyz':
+    #    p = yt.ProjectionPlot(data_ds, ax, 'H_number_density', center=center, width=(200, 'kpc'), data_source=sp)
+    #    p.set_zlim('H_number_density', 1e11,1e23)
+    #    p.annotate_sphere(center, (10, 'kpc'), circle_args={'color':'white', 'alpha':0.5, 'linestyle':'dashed', 'linewidth':2})
+    #    p.annotate_marker(center, coord_system='data')
+    #    p.save("%s/%s/" % (run, fn))
     #prof = yt.ProfilePlot(sp, "radius", ["cell_mass", 'H_p0_mass', 'O_p5_mass'],
     #                      weight_field=None,
     #                      accumulation=False)
