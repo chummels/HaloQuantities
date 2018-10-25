@@ -1,5 +1,5 @@
 import yt
-from yt.analysis_modules.halo_analysis.api import HaloCatalog
+from yt_astro_analysis.halo_analysis.api import HaloCatalog
 import os
 import sys
 """
@@ -14,6 +14,7 @@ python halo_quantities1.py Natural DD0274
 run = sys.argv[1]
 fn = sys.argv[2]
 cwd = os.getcwd()
+#path = '/mnt/c/scratch/sciteam/chummels'
 path = '/Users/chummels/scratch/Tempest/new'
 full_fn = os.path.join(path, run, fn, fn)
 data_ds = yt.load(full_fn)

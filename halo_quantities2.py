@@ -1,5 +1,5 @@
 import yt
-from yt.analysis_modules.halo_analysis.api import HaloCatalog
+from yt_astro_analysis.halo_analysis.api import HaloCatalog
 import os
 import sys
 import ytree
@@ -47,11 +47,10 @@ if __name__ == '__main__':
     run = sys.argv[1]
     fn = sys.argv[2]
     cwd = os.getcwd()
+    #path = '/mnt/c/scratch/sciteam/chummels'
     path = '/Users/chummels/scratch/Tempest/new'
     full_fn = os.path.join(path, run, fn, fn)
     data_ds = yt.load(full_fn)
-    #hc = HaloCatalog(data_ds=data_ds, finder_method='hop', finder_kwargs={"dm_only":False})
-    #hc.create()
     # Find centroid of Natural halo from rockstar files
     rockstar_data = get_rockstar_data(os.path.join(path, 'tree_27.dat'), 27)
     c = read_rockstar_center(rockstar_data, data_ds)
@@ -62,25 +61,18 @@ if __name__ == '__main__':
     y_max = c[1]+offset
     z_min = c[2]-offset
     z_max = c[2]+offset
-    print(x_min)
-    print(x_max)
-    print(y_min)
-    print(y_max)
-    print(z_min)
-    print(z_max)
     # Instantiate a catalog using those two paramter files
     halos_ds = yt.load(os.path.join(run, fn, 'catalog', 'catalog.0.h5'))
     hc = HaloCatalog(data_ds=data_ds, halos_ds=halos_ds, 
                     output_dir='.')
     hc.add_filter('quantity_value', 'particle_mass', '>', 1E10, 'Msun')
-    # 0.49243498  0.48236668  0.50483814
     hc.add_filter('quantity_value', 'particle_position_x', '>', x_min.v, 'unitary')
     hc.add_filter('quantity_value', 'particle_position_x', '<', x_max.v, 'unitary')
     hc.add_filter('quantity_value', 'particle_position_y', '>', y_min.v, 'unitary')
     hc.add_filter('quantity_value', 'particle_position_y', '<', y_max.v, 'unitary')
     hc.add_filter('quantity_value', 'particle_position_z', '>', z_min.v, 'unitary')
     hc.add_filter('quantity_value', 'particle_position_z', '<', z_max.v, 'unitary')
-    hc.add_callback("iterative_center_of_mass", inner_ratio=0.05)
+    hc.add_callback("iterative_center_of_mass", inner_ratio=0.05, outer_radius=0.5)
     #hc.add_callback("sphere")
     #hc.add_callback("sphere_field_max_recenter", 'density')
     hc.add_recipe("calculate_virial_quantities", ["radius", "matter_mass"])

@@ -1,10 +1,11 @@
 import yt
-from yt.analysis_modules.halo_analysis.api import HaloCatalog
+from yt_astro_analysis.halo_analysis.api import HaloCatalog
 import os
 import ytree
 import numpy as np
 import trident
 import sys
+import h5py as h5
 """
 Run this third:
 
@@ -69,6 +70,7 @@ def DM(pfilter, data):
 if __name__ == '__main__':
     run = sys.argv[1]
     fn = sys.argv[2]
+    #path = '/mnt/c/scratch/sciteam/chummels'
     path = '/Users/chummels/scratch/Tempest/new'
     cwd = os.getcwd()
     data_ds = yt.load(os.path.join(path, run, fn, fn))
@@ -77,23 +79,26 @@ if __name__ == '__main__':
     rockstar_data = get_rockstar_data(os.path.join(path,'tree_27.dat'), 27)
     c = read_rockstar_center(rockstar_data, data_ds)
     rvir = read_rockstar_rvir(rockstar_data, data_ds)
-    f = open(os.path.join(cwd, run, fn, 'README2'), 'w')
+    f = open(os.path.join(cwd, run, fn, 'README'), 'w')
     ad = halo_ds.all_data()
     dists = distance(c[0], c[1], c[2], ad['particle_position_x'].convert_to_units('unitary'), ad['particle_position_y'].convert_to_units('unitary'), ad['particle_position_z'].convert_to_units('unitary'))
     winner = np.argmin(dists)
     center = [ad['particle_position_x'][winner].in_units('unitary'), ad['particle_position_y'][winner].in_units('unitary'), ad['particle_position_z'][winner].in_units('unitary')]
+
+    r200 = ad['radius_200'][winner].to('kpc')
+    m200 = ad['matter_mass_200'][winner].to('Msun')
+
     print("Original Halo Position and rvir")
     print(c)
     print(rvir)
     print('HaloID = %s' % ad['particle_identifier'][winner])
     print('distance = %g kpc' % dists[winner].in_units('kpc'))
-    print('M200 = %g Msun' % ad['matter_mass_200'][winner].in_units('Msun'))
-    print('Mvir = %g Msun' % ad['particle_mass'][winner].in_units('Msun'))
-    print('R200 = %g kpc' % ad['radius_200'][winner].in_units('kpc'))
-    print('Rvir = %g kpc' % ad['virial_radius'][winner].in_units('kpc'))
+    print('R200 = %g kpc' % r200)
+    print('M200 = %g Msun' % m200)
+    #print('Mvir = %g Msun' % ad['particle_mass'][winner].in_units('Msun'))
+    #print('Rvir = %g kpc' % ad['virial_radius'][winner].in_units('kpc'))
     print('center = %s' % center)
 
-    r200 = ad['radius_200'][winner].in_units('kpc')
     data_ds.add_particle_filter('stars')
     data_ds.add_particle_filter('DM')
     trident.add_ion_fields(data_ds, ['O VI'])
@@ -101,21 +106,21 @@ if __name__ == '__main__':
     sp_core = data_ds.sphere(center, (10, 'kpc'))
     cgm = sp - sp_core
     m_tot = sp.quantities.total_mass()
-    print(m_tot.in_units('Msun'))
-    m_gas = np.sum(sp['cell_mass']).in_units('Msun')
-    m_star = np.sum(sp[('stars', 'particle_mass')]).in_units('Msun')
-    m_DM = np.sum(sp[('DM', 'particle_mass')]).in_units('Msun')
-    m_CGM = np.sum(cgm[('gas', 'cell_mass')]).in_units('Msun')
-    m_HI = np.sum(cgm[('gas', 'H_p0_mass')]).in_units('Msun')
-    m_OVI = np.sum(cgm[('gas', 'O_p5_mass')]).in_units('Msun')
+    print(m_tot.to('Msun'))
+    m_gas = np.sum(sp['cell_mass']).to('Msun')
+    m_star = np.sum(sp[('stars', 'particle_mass')]).to('Msun')
+    m_DM = np.sum(sp[('DM', 'particle_mass')]).to('Msun')
+    m_CGM = np.sum(cgm[('gas', 'cell_mass')]).to('Msun')
+    m_HI = np.sum(cgm[('gas', 'H_p0_mass')]).to('Msun')
+    m_OVI = np.sum(cgm[('gas', 'O_p5_mass')]).to('Msun')
     cold = cgm.cut_region(["(obj['temperature'] < 1e4)"])
     cool = cgm.cut_region(["(obj['temperature'] > 1e4) & (obj['temperature'] < 1e5)"])
     warm = cgm.cut_region(["(obj['temperature'] > 1e5) & (obj['temperature'] < 1e6)"])
     hot = cgm.cut_region(["(obj['temperature'] > 1e6)"])
-    m_cold = np.sum(cold[('gas', 'cell_mass')]).in_units('Msun')
-    m_cool = np.sum(cool[('gas', 'cell_mass')]).in_units('Msun')
-    m_warm = np.sum(warm[('gas', 'cell_mass')]).in_units('Msun')
-    m_hot = np.sum(hot[('gas', 'cell_mass')]).in_units('Msun')
+    m_cold = np.sum(cold[('gas', 'cell_mass')]).to('Msun')
+    m_cool = np.sum(cool[('gas', 'cell_mass')]).to('Msun')
+    m_warm = np.sum(warm[('gas', 'cell_mass')]).to('Msun')
+    m_hot = np.sum(hot[('gas', 'cell_mass')]).to('Msun')
     m_tot = m_gas+m_star+m_DM
     print("m_gas = %g Msun" % m_gas)
     print("m_star = %g Msun" % m_star)
@@ -133,11 +138,11 @@ if __name__ == '__main__':
     f.write("%s\n" % c)
     f.write("%s\n" % rvir)
     f.write('HaloID = %s\n' % ad['particle_identifier'][winner])
-    f.write('distance = %g kpc\n' % dists[winner].in_units('kpc'))
-    f.write('M200 = %g Msun\n' % ad['matter_mass_200'][winner].in_units('Msun'))
-    f.write('Mvir = %g Msun\n' % ad['particle_mass'][winner].in_units('Msun'))
-    f.write('R200 = %g kpc\n' % ad['radius_200'][winner].in_units('kpc'))
-    f.write('Rvir = %g kpc\n' % ad['virial_radius'][winner].in_units('kpc'))
+    f.write('distance = %g kpc\n' % dists[winner].to('kpc'))
+    f.write('R200 = %g kpc\n' % r200)
+    f.write('M200 = %g Msun\n' % m200)
+    #f.write('Mvir = %g Msun\n' % ad['particle_mass'][winner].to('Msun'))
+    #f.write('Rvir = %g kpc\n' % ad['virial_radius'][winner].to('kpc'))
     f.write('center = %s\n' % center)
 
     f.write("m_gas = %g Msun\n" % m_gas)
@@ -152,8 +157,15 @@ if __name__ == '__main__':
     f.write("m_HI = %g Msun\n" % m_HI)
     f.write("m_OVI = %g Msun\n" % m_OVI)
     f.close()
+
+    d = [r200, m200, m_gas, m_star, m_DM, m_tot, m_CGM, m_cold, m_cool, m_warm, m_hot, m_HI, m_OVI]
+    f = h5.File(os.path.join(cwd, run, fn, 'halo.h5'), 'w')
+    f.create_dataset('d', data=d)
+    f.close()
+
     for ax in 'xyz':
-        p = yt.ProjectionPlot(data_ds, ax, 'H_number_density', center=center, width=(200, 'kpc'), data_source=cgm)
+        p = yt.ProjectionPlot(data_ds, ax, 'H_number_density', center=center, width=(200, 'kpc'), data_source=sp)
+        p.set_zlim('H_number_density', 1e11,1e23)
         p.annotate_sphere(center, (10, 'kpc'), circle_args={'color':'white', 'alpha':0.5, 'linestyle':'dashed', 'linewidth':2})
         p.annotate_marker(center, coord_system='data')
         p.save("%s/%s/" % (run, fn))
